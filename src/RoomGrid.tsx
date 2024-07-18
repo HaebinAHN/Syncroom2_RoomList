@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Grid, Card, CardContent, Avatar, Typography, FormControlLabel, Checkbox, Divider, AppBar, Box, Button } from '@mui/material';
 import { styled } from '@mui/system';
-//import usePushNotification from './usePushNotification';
+import usePushNotification from './usePushNotification';
 
 const Logo = styled('img')({
     marginRight: '10px',
@@ -54,15 +54,30 @@ const RoomGrid: React.FC = () => {
     const [filterKorean, setFilterKorean] = useState<boolean>(true);
     const [filterJapanese, setFilterJapanese] = useState<boolean>(true);
 
-    // const { fireNotification } = usePushNotification();
+    const [subscribeList, setSubscribeList] = useState<string[]>([]);
+    const findRoomById = (rooms: Room[], roomId: string): Room | undefined => {
+        return rooms.find(room => room.roomId === roomId);
+    };
 
-    // const handleNotification = (title: string, options: NotificationOptions) => {
-    //     if (fireNotification) {
-    //         fireNotification(title, options);
-    //     } else {
-    //         console.error('fireNotification function is not available');
-    //     }
-    // };
+    const handleButtonClick = (roomId: string) => {
+        if (subscribeList.includes(roomId)) {
+            setSubscribeList(subscribeList.filter(e => e !== roomId))
+        }
+        else {
+            setSubscribeList([...subscribeList, roomId])
+        }
+        console.log(subscribeList);
+    };
+
+    const { fireNotification } = usePushNotification();
+
+    const handleNotification = (title: string, options: NotificationOptions) => {
+        if (fireNotification) {
+            fireNotification(title, options);
+        } else {
+            console.error('fireNotification function is not available');
+        }
+    };
 
     const fetchRooms = () => {
         axios.get('https://webapi.syncroom.appservice.yamaha.com/rooms/guest/online')
@@ -77,9 +92,21 @@ const RoomGrid: React.FC = () => {
 
     useEffect(() => {
         fetchRooms();
-        const interval = setInterval(fetchRooms, 30000); // 30초마다 fetchRooms 호출
+        const interval = setInterval(fetchRooms, 10000); // 10초마다 fetchRooms 호출
         return () => clearInterval(interval); // 컴포넌트 언마운트 시 인터벌 정리
     }, []);
+
+    useEffect(() => {
+        for (let idx = 0; idx < subscribeList.length; idx++) {
+            const room = findRoomById(rooms, subscribeList[idx]);
+            if (room && room.members.length < 6) {
+                handleNotification(`${room.name}에 입장 가능합니다!`, {
+                    body: `${room.name} 방 인원이 6명 미만입니다.`,
+                });
+                setSubscribeList(subscribeList.filter(e => e !== subscribeList[idx]))
+            }
+        }
+    }, [subscribeList, rooms]);
 
     useEffect(() => {
         applyFilters();
@@ -226,11 +253,8 @@ const RoomGrid: React.FC = () => {
                                     ))}
                                 </Grid>
                                 <Box textAlign={'right'} marginTop={'1rem'}>
-                                    {/* <Button variant="contained" onClick={() => handleButtonClick('Hello!', {
-                                        body: 'This is a push notification.',
-                                        icon: '/path/to/icon.png',
-                                        badge: '/path/to/badge.png'
-                                    })}>🔔자리나면 알림받기</Button> */}
+                                    {room.members.length === 6 && (<Button variant={subscribeList.includes(room.roomId) ? 'outlined' : 'contained'} color="secondary" onClick={() => handleButtonClick(room.roomId)}>
+                                        {subscribeList.includes(room.roomId) ? '알림 대기중...' : '🔔자리나면 알림받기'}</Button>)} &nbsp;
                                     <Button
                                         component="a"
                                         href={`https://webapi.syncroom.appservice.yamaha.com/launch_app?roomName=${room.name}&roomId=${room.roomId}&requirePassword=${room.needPasswd ? '1' : '0'}`}
