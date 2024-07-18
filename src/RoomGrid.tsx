@@ -66,7 +66,6 @@ const RoomGrid: React.FC = () => {
         else {
             setSubscribeList([...subscribeList, roomId])
         }
-        console.log(subscribeList);
     };
 
     const { fireNotification } = usePushNotification();
@@ -100,8 +99,8 @@ const RoomGrid: React.FC = () => {
         for (let idx = 0; idx < subscribeList.length; idx++) {
             const room = findRoomById(rooms, subscribeList[idx]);
             if (room && room.members.length < 6) {
-                handleNotification(`${room.name}에 입장 가능합니다!`, {
-                    body: `${room.name} 방 인원이 6명 미만입니다.`,
+                handleNotification(`[${room.name}] 방에 지금 입장 가능합니다!`, {
+                    body: "방 인원이 6명 미만입니다.",
                 });
                 setSubscribeList(subscribeList.filter(e => e !== subscribeList[idx]))
             }
@@ -254,14 +253,14 @@ const RoomGrid: React.FC = () => {
                                 </Grid>
                                 <Box textAlign={'right'} marginTop={'1rem'}>
                                     {room.members.length === 6 && (<Button variant={subscribeList.includes(room.roomId) ? 'outlined' : 'contained'} color="secondary" onClick={() => handleButtonClick(room.roomId)}>
-                                        {subscribeList.includes(room.roomId) ? '알림 대기중...' : '🔔자리나면 알림받기'}</Button>)} &nbsp;
-                                    <Button
+                                        {subscribeList.includes(room.roomId) ? '알림 대기중...' : '🔔자리나면 알림받기'}</Button>)}
+                                    {room.members.length < 6 && (<Button
                                         component="a"
                                         href={`https://webapi.syncroom.appservice.yamaha.com/launch_app?roomName=${room.name}&roomId=${room.roomId}&requirePassword=${room.needPasswd ? '1' : '0'}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         variant="contained"
-                                        color="primary">룸 입장하기</Button>
+                                        color="primary">룸 입장하기</Button>)}
                                 </Box>
                             </CardContent>
                         </Card>
